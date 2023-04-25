@@ -3,7 +3,12 @@
 		<div class="item item-right">
 			<div :class="{'bubble bubble-right': true, 'large': isLarge}">
 				<span class="inner">
-					{{ msg }}
+					<template v-if="imgID > -1">
+						<img :src="imgList[imgID] !== undefined ? imgList[imgID].url : null" alt="img" style="width: 340px;">
+					</template>
+					<template v-else>
+						{{ msg }}
+					</template>
 				</span>
 			</div>
 			<div class="avatar">
@@ -20,6 +25,8 @@
 defineProps({
   msg: String,
 	avatarURL: String,
+	imgID: Number,
+	imgList: Array,
 	isLarge: Boolean,
 })
 </script>

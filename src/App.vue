@@ -3,6 +3,7 @@ import { reactive, ref } from 'vue';
 import FrnMessage from '@/components/FrnMessage.vue';
 import MyMessage from '@/components/MyMessage.vue';
 import AvatarUpload from "@/components/AvatarUpload.vue";
+import AvatarListUpload from "@/components/AvatarListUpload.vue";
 
 // ==== Form ==== //
 const drawer = ref(false);
@@ -12,7 +13,6 @@ const form = reactive({
   animationSpeed: 0.5,
   typingSpeed: 10,
   rightAvatarUrl: '',
-  leftAvatarUrl: '',
   messages: '',
 })
 
@@ -33,13 +33,13 @@ const startAnimation = async () => {
     showIndex.value++;
     scroll();
     try {
-      if (messages.value[showIndex.value + 1].isFriend === false) {
+      if (messages.value[showIndex.value + 1].isFriend === -1 && message.value[showIndex.value + 1].imgID === -1) {
         typeValue.value = messages.value[showIndex.value + 1].msg;
         charIndex.value = 0;
         tmp = 1000 / form.typingSpeed * typeValue.value.length + 3000;
         setTimeout(typeText, 2500);
       }
-      if (messages.value[showIndex.value].isFriend === true) {
+      if (messages.value[showIndex.value].isFriend > -1) {
         await new Audio("/twitter-notification-sound.mp3").play();
       }
     } catch (e) {}
@@ -49,17 +49,40 @@ const startAnimation = async () => {
 
 // ==== Context Control ==== //
 const isLarge = ref(false)
+const imgID = ref(0);
 const messages = ref([
-  {msg: "Hi", isFriend: true},
-  {msg: "Hi There", isFriend: false},
+  {msg: "Hi", isFriend: 0, imgID: -1},
+  {msg: "Hi There", isFriend: -1, imgID: -1},
 ])
+const frnAvatarList = ref([])
+const imgList = ref({
+
+})
 const processMessages = () => {
   messages.value = [];
   form.messages.split("\n").forEach(msg => {
-    if (msg.charAt(0) === "#") {
-      messages.value.push({msg: msg.substring(1), isFriend: true})
+    imgID.value = -1;
+    if (msg.includes("$")) {
+      for (let i = 0; i < msg.length; i++) {
+        if (msg.charAt(i) === "$") {
+          imgID.value = msg.substring(i + 1, msg.length);
+          imgID.value--;
+          console.log(imgID.value)
+          break;
+        }
+      }
+    }
+
+    let count = 0;
+    for (let i = 0; i < msg.length; i++) {
+      if (msg.charAt(i) === "#") {
+        count++;
+      }
+    }
+    if (count > 0) {
+      messages.value.push({msg: msg.substring(count), isFriend: count - 1, imgID: imgID.value})
     } else {
-      messages.value.push({msg: msg, isFriend: false});
+      messages.value.push({msg: msg, isFriend: -1, imgID: imgID.value});
     }
   })
   showIndex.value = messages.value.length -1 ;
@@ -124,9 +147,10 @@ const typeText = () => {
           <el-form-item label="TypingSpeed (letter/s):">
           <el-input v-model="form.typingSpeed" type="number" />
         </el-form-item>
-          <div style="display: flex; justify-content: space-around">
-            <AvatarUpload @url="url => form.leftAvatarUrl = url" label="LeftSide Avatar:" />
+          <div style="display: flex; justify-content: space-around; flex-direction: column;">
             <AvatarUpload @url="url => form.rightAvatarUrl = url" label="RightSide Avatar:" />
+            <AvatarListUpload @urls="urls => frnAvatarList = urls" label="LeftSide Avatar(s):" />
+            <ImageListUpload @urls="urls => imgList = urls" />
           </div>
           <el-form-item label="Name:">
             <el-input v-model="form.name"/>
@@ -158,11 +182,11 @@ const typeText = () => {
       <div class="content">
         <div v-for="(msg, index) in messages" :key="index">
           <template v-if="showIndex >= index">
-            <template v-if="msg.isFriend" class="frn">
-              <FrnMessage :avatarURL="form.leftAvatarUrl" :msg="msg.msg" :scroll="scroll" />
+            <template v-if="msg.isFriend > -1" class="frn">
+              <FrnMessage :avatarURL="frnAvatarList[msg.isFriend] !== undefined ? frnAvatarList[msg.isFriend].url : null" :msg="msg.msg" :imgID="msg.imgID" :imgList="imgList" :isLarge="isLarge" />
             </template>
             <template v-else>
-              <MyMessage :avatarURL="form.rightAvatarUrl" :msg="msg.msg" :scroll="scroll" />
+              <MyMessage :avatarURL="form.rightAvatarUrl" :msg="msg.msg" :imgID="msg.imgID" :imgList="imgList" :isLarge="isLarge" />
             </template>
           </template>
         </div>
