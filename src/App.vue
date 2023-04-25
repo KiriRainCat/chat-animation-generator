@@ -1,9 +1,10 @@
 <script setup>
-import { reactive, ref } from 'vue';
+import {onUpdated, reactive, ref} from 'vue';
 import FrnMessage from '@/components/FrnMessage.vue';
 import MyMessage from '@/components/MyMessage.vue';
 import AvatarUpload from "@/components/AvatarUpload.vue";
 import AvatarListUpload from "@/components/AvatarListUpload.vue";
+import ImageListUpload from "@/components/ImageListUpload.vue";
 
 // ==== Form ==== //
 const drawer = ref(false);
@@ -31,9 +32,8 @@ const startAnimation = async () => {
       buttonActive.value = false;
     }
     showIndex.value++;
-    scroll();
     try {
-      if (messages.value[showIndex.value + 1].isFriend === -1 && message.value[showIndex.value + 1].imgID === -1) {
+      if (messages.value[showIndex.value + 1].isFriend === -1 && messages.value[showIndex.value + 1].imgID === -1) {
         typeValue.value = messages.value[showIndex.value + 1].msg;
         charIndex.value = 0;
         tmp = 1000 / form.typingSpeed * typeValue.value.length + 3000;
@@ -65,9 +65,8 @@ const processMessages = () => {
     if (msg.includes("$")) {
       for (let i = 0; i < msg.length; i++) {
         if (msg.charAt(i) === "$") {
-          imgID.value = msg.substring(i + 1, msg.length);
+          imgID.value = Number.parseInt(msg.substring(i + 1, msg.length));
           imgID.value--;
-          console.log(imgID.value)
           break;
         }
       }
@@ -87,10 +86,7 @@ const processMessages = () => {
   })
   showIndex.value = messages.value.length -1 ;
 }
-const scroll = () => {
-  const scroller = document.querySelector(".content")
-  scroller.scrollTo({top: 100000, behavior: "smooth"});
-}
+
 const blurButton = (e) => {
   e.target.blur();
   if(e.target.nodeName === 'SPAN') {
@@ -110,6 +106,12 @@ const typeText = () => {
     setTimeout(typeText, 1000 / form.typingSpeed);
   }
 }
+
+// ==== Auto Scroll ====
+onUpdated(() => {
+  const scroller = document.querySelector(".content")
+  scroller.scrollTop = scroller.scrollHeight;
+})
 </script>
 
 <template>
@@ -135,7 +137,7 @@ const typeText = () => {
     </div>
 
     <div :class="{'container': true, 'large': isLarge}" style="text-align: center">
-      <el-drawer v-model="drawer" :with-header="false" direction="ltr" size="25%">
+      <el-drawer v-model="drawer" :with-header="false" direction="ltr" size="30%">
         <el-form
             :model="form"
             label-position="left"
@@ -163,7 +165,7 @@ const typeText = () => {
               :autosize="{ minRows: 14, maxRows: 14 }"
               resize="none"
               type="textarea"
-              placeholder="Messages &#10;Use # for friend message&#10;&#10;Ex. &#10;Hi&#10;#Hi There"
+              placeholder="Messages:&#10;Use # for friend message&#10;Ex. &#10;Hi&#10;#Hi There&#10;&#10;Using multiple # can set multiple avatars&#10;Ex. # for 1st person&#10;## for 2nd person&#10;(Just upload the avatar pictured in order)&#10;&#10;Using $ with the number dedicated to the uploaded image to send image&#10;Ex. $1 sends the first image among the uploaded images&#10;(Can be combined with #, #$1 pic send from other character)"
               @change="processMessages"
           />
         </el-form>
@@ -190,7 +192,6 @@ const typeText = () => {
             </template>
           </template>
         </div>
-        <div style="height: 160px;"></div>
       </div>
       <div :class="{'input-area': true, 'large': isLarge}">
         <div class="textarea">
