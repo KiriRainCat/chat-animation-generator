@@ -1,5 +1,5 @@
 # Chat Animation Generator
-- By KiriRainCat(柒夜雨猫) <Sam Zhou>
+- By KiriRainCat(柒夜雨猫) \<Sam Zhou\>
 ## Function Included
 - Setting intervals between messages (v1.0)
 - Setting the typing speed of the sender (v1.0)
